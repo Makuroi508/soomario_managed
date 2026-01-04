@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soomario - Managed Client Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Login Screen */
+        #loginScreen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            gap: 30px;
+        }
+
+        .login-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid #06b6d4;
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 10px 40px rgba(6, 182, 212, 0.3);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .soomario-logo {
+            font-size: 3em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #06b6d4 0%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            letter-spacing: 3px;
+        }
+
+        .login-subtitle {
+            color: #94a3b8;
+            font-size: 1.1em;
+            margin-bottom: 40px;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid #475569;
+            border-radius: 10px;
+            color: #e2e8f0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: #06b6d4;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%);
+            border: none;
+            border-radius: 10px;
+            color: #0f172a;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(6, 182, 212, 0.5);
+        }
+
+        .error-message {
+            color: #ef4444;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        /* Main Dashboard */
+        #dashboard {
+            display: none;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 3px solid #06b6d4;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(6, 182, 212, 0.3),
+                        inset 0 0 20px rgba(6, 182, 212, 0.1);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .soomario-brand {
+            font-size: 2em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #06b6d4 0%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+        }
+
+        .account-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .account-selector {
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid #06b6d4;
+            border-radius: 8px;
+            padding: 8px 15px;
+            color: #06b6d4;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            font-weight: bold;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(34, 197, 94, 0.2);
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: 1px solid #22c55e;
+        }
+
+        .live-dot {
+            width: 10px;
+            height: 10px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .tagline {
+            font-size: 1em;
+            color: #64748b;
+            text-align: center;
+        }
+
+        /* This Week Performance */
+        .week-performance {
+            background: linear-gradient(135deg, #06b6d4 0%, #0284c7 100%);
+            border: 3px solid #38bdf8;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 40px rgba(6, 182, 212, 0.4);
+            color: #0f172a;
+        }
+
+        .week-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .week-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .week-stat {
+            text-align: center;
+        }
+
+        .week-stat-label {
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            opacity: 0.8;
+        }
+
+        .week-stat-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid #06b6d4;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4);
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #06b6d4;
+        }
+
+        .stat-value.positive {
+            color: #22c55e;
+        }
+
+        .stat-value.negative {
+            color: #ef4444;
+        }
+
+        /* Section Card */
+        .section-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid #06b6d4;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            color: #06b6d4;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Table Styles */
+        .table-wrapper {
+            max-height: 500px;
+            overflow-y: auto;
+            overflow-x: auto;
+            border-radius: 5px;
+        }
+
+        .table-wrapper::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(6, 182, 212, 0.5);
+            border-radius: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: rgba(6, 182, 212, 0.8);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: rgba(6, 182, 212, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            color: #06b6d4;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            border-bottom: 2px solid #06b6d4;
+            background: rgba(15, 23, 42, 0.95);
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(6, 182, 212, 0.2);
+            color: #e2e8f0;
+            white-space: nowrap;
+        }
+
+        tbody tr {
+            transition: background 0.3s;
+        }
+
+        tbody tr:hover {
+            background: rgba(6, 182, 212, 0.1);
+        }
+
+        .direction-long {
+            color: #22c55e;
+            font-weight: bold;
+        }
+
+        .direction-short {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .pnl-positive {
+            color: #22c55e;
+            font-weight: bold;
+        }
+
+        .pnl-negative {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #06b6d4;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #e2e8f0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .soomario-brand {
+                font-size: 1.5em;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .table-wrapper {
+                max-height: 400px;
+            }
+
+            .login-card {
+                padding: 30px;
+            }
+
+            .soomario-logo {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Screen -->
+        <div id="loginScreen">
+            <div class="login-card">
+                <div class="soomario-logo">SOOMARIO</div>
+                <div class="login-subtitle">Managed Client Portal</div>
+                
+                <select id="accountSelectLogin" class="login-input" onchange="showPasswordField()">
+                    <option value="">Select Your Account...</option>
+                </select>
+                
+                <div id="passwordField" style="display: none;">
+                    <input 
+                        type="password" 
+                        id="passwordInput" 
+                        class="login-input" 
+                        placeholder="Enter Your Password"
+                        onkeypress="if(event.key === 'Enter') login()"
+                    >
+                    <button class="login-button" onclick="login()">ACCESS DASHBOARD</button>
+                </div>
+                
+                <div id="loginError" class="error-message"></div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard -->
+        <div id="dashboard">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-top">
+                    <div class="brand-section">
+                        <div class="soomario-brand">SOOMARIO</div>
+                    </div>
+                    <div class="account-info">
+                        <div class="account-selector" id="accountDisplay">
+                            Account 00000
+                        </div>
+                        <div class="live-indicator">
+                            <div class="live-dot"></div>
+                            <span>Live</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="tagline">Professional Managed Trading Services</div>
+            </div>
+
+            <!-- This Week's Performance -->
+            <div class="week-performance" id="weekPerformance" style="display: none;">
+                <div class="week-title">📅 WEEK <span id="weekNumber">1</span> PERFORMANCE</div>
+                <div class="week-stats">
+                    <div class="week-stat">
+                        <div class="week-stat-label">TOTAL RETURN</div>
+                        <div class="week-stat-value" id="weekReturn">$0.00</div>
+                    </div>
+                    <div class="week-stat">
+                        <div class="week-stat-label">YOUR SHARE (15%)</div>
+                        <div class="week-stat-value" id="weekProfitShare">$0.00</div>
+                    </div>
+                    <div class="week-stat">
+                        <div class="week-stat-label">COMPOUNDED</div>
+                        <div class="week-stat-value" id="weekCompounded">$0.00</div>
+                    </div>
+                    <div class="week-stat">
+                        <div class="week-stat-label">WITHDRAWN</div>
+                        <div class="week-stat-value" id="weekWithdrawn">$0.00</div>
+                    </div>
+                    <div class="week-stat">
+                        <div class="week-stat-label">DEPOSITED</div>
+                        <div class="week-stat-value" id="weekDeposited" style="color: #0f172a;">$0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="loading">Select an account to view dashboard...</div>
+            </div>
+
+            <!-- Equity Curve -->
+            <div class="section-card" id="chartSection" style="display: none;">
+                <div class="section-title">📈 EQUITY CURVE</div>
+                <canvas id="equityChart"></canvas>
+            </div>
+
+            <!-- Weekly Breakdown -->
+            <div class="section-card" id="weeklySection" style="display: none;">
+                <div class="section-title">📊 WEEKLY BREAKDOWN</div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>WEEK</th>
+                                <th>ENDING DATE</th>
+                                <th>RETURN</th>
+                                <th>PROFIT SHARE</th>
+                                <th>COMPOUNDED</th>
+                                <th>WITHDRAWN</th>
+                                <th>DEPOSITED</th>
+                            </tr>
+                        </thead>
+                        <tbody id="weeklyBreakdown">
+                            <tr><td colspan="7" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Trade History -->
+            <div class="section-card" id="tradesSection" style="display: none;">
+                <div class="section-title">📋 TRADE HISTORY</div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>TIME</th>
+                                <th>COIN</th>
+                                <th>DIRECTION</th>
+                                <th>PRICE</th>
+                                <th>SHARES</th>
+                                <th>NET VALUE</th>
+                                <th>FEE</th>
+                                <th>CLOSED PNL</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tradeHistory">
+                            <tr><td colspan="8" class="loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURATION
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxWjzbyzpJmqDtPis4-sFtss-2Rc124RSUn_6N8VZ0v4HIs65N_aH0dWPIRrgYT5tEYjw/exec';
+        
+        let currentAccount = null;
+        let allData = null;
+        let equityChart = null;
+
+        // Load accounts on page load
+        window.addEventListener('load', () => {
+            loadAccountsList();
+        });
+
+        async function loadAccountsList() {
+            try {
+                const response = await fetch(`${API_URL}?action=getAccounts`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    document.getElementById('loginError').textContent = 'Error loading accounts';
+                    return;
+                }
+                
+                // Populate account selector
+                const select = document.getElementById('accountSelectLogin');
+                select.innerHTML = '<option value="">Select Your Account...</option>';
+                data.accounts.forEach(account => {
+                    const option = document.createElement('option');
+                    option.value = account.id;
+                    option.textContent = `Account ${account.id}`;
+                    select.appendChild(option);
+                });
+                
+            } catch (error) {
+                console.error('Error loading accounts:', error);
+                document.getElementById('loginError').textContent = 'Connection error. Please check your setup.';
+            }
+        }
+
+        function showPasswordField() {
+            const accountId = document.getElementById('accountSelectLogin').value;
+            const passwordField = document.getElementById('passwordField');
+            const errorDiv = document.getElementById('loginError');
+            
+            if (accountId) {
+                passwordField.style.display = 'block';
+                errorDiv.textContent = '';
+                document.getElementById('passwordInput').focus();
+            } else {
+                passwordField.style.display = 'none';
+            }
+        }
+
+        async function login() {
+            const accountId = document.getElementById('accountSelectLogin').value;
+            const password = document.getElementById('passwordInput').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (!accountId) {
+                errorDiv.textContent = 'Please select your account';
+                return;
+            }
+            
+            if (!password) {
+                errorDiv.textContent = 'Please enter your password';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}?accountId=${encodeURIComponent(accountId)}&password=${encodeURIComponent(password)}`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    errorDiv.textContent = data.error || 'Invalid password';
+                    return;
+                }
+                
+                allData = data;
+                currentAccount = accountId;
+                
+                // Update header with account
+                document.getElementById('accountDisplay').textContent = `Account ${accountId}`;
+                
+                // Show dashboard
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                
+                // Update dashboard
+                updateDashboard();
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                errorDiv.textContent = 'Connection error. Please try again.';
+            }
+        }
+
+        function updateDashboard() {
+            if (!allData) return;
+            
+            updateWeekPerformance();
+            updateStats();
+            updateChart();
+            updateWeeklyBreakdown();
+            updateTradeHistory();
+            
+            // Show sections
+            document.getElementById('weekPerformance').style.display = 'block';
+            document.getElementById('chartSection').style.display = 'block';
+            document.getElementById('weeklySection').style.display = 'block';
+            document.getElementById('tradesSection').style.display = 'block';
+        }
+
+        function updateWeekPerformance() {
+            const stats = allData.stats;
+            
+            document.getElementById('weekNumber').textContent = stats.weekNumber || 1;
+            document.getElementById('weekReturn').textContent = `$${stats.currentWeekReturn}`;
+            document.getElementById('weekProfitShare').textContent = `$${stats.currentWeekProfitShare}`;
+            document.getElementById('weekCompounded').textContent = `$${stats.currentWeekCompounded}`;
+            document.getElementById('weekWithdrawn').textContent = `$${stats.currentWeekWithdrawn}`;
+            document.getElementById('weekDeposited').textContent = `$${stats.currentWeekDeposited}`;
+        }
+
+        function updateStats() {
+            const stats = allData.stats;
+            
+            const statsHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Starting Capital</div>
+                    <div class="stat-value">$${stats.startingCapital}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Current Equity</div>
+                    <div class="stat-value">$${stats.currentEquity}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Total Return</div>
+                    <div class="stat-value ${parseFloat(stats.totalReturn) >= 0 ? 'positive' : 'negative'}">
+                        ${parseFloat(stats.totalReturn) >= 0 ? '+' : ''}$${stats.totalReturn}
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">ROI %</div>
+                    <div class="stat-value ${parseFloat(stats.roiPercent) >= 0 ? 'positive' : 'negative'}">
+                        ${parseFloat(stats.roiPercent) >= 0 ? '+' : ''}${stats.roiPercent}%
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Max Drawdown</div>
+                    <div class="stat-value negative">-${stats.maxDrawdown}%</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Win Rate</div>
+                    <div class="stat-value">${stats.winRate}%</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Total Trades</div>
+                    <div class="stat-value">${stats.totalTrades}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Profitable Trades</div>
+                    <div class="stat-value positive">${stats.profitableTrades}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Avg Win</div>
+                    <div class="stat-value positive">$${stats.avgWin}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Avg Loss</div>
+                    <div class="stat-value negative">$${stats.avgLoss}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Sharpe Ratio</div>
+                    <div class="stat-value">${stats.sharpeRatio}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Total Compounded</div>
+                    <div class="stat-value positive">$${stats.totalCompounded}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Total Profit Share</div>
+                    <div class="stat-value">$${stats.totalProfitSharePaid}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Total Deposited</div>
+                    <div class="stat-value positive">$${stats.totalDeposited}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Total Withdrawn</div>
+                    <div class="stat-value">$${stats.totalWithdrawn}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Total Deposited</div>
+                    <div class="stat-value positive">$${stats.totalDeposited}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Effective Capital</div>
+                    <div class="stat-value">$${stats.effectiveCapital}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Account Growth</div>
+                    <div class="stat-value positive">$${stats.accountGrowth}</div>
+                </div>
+            `;
+            
+            document.getElementById('statsGrid').innerHTML = statsHTML;
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('equityChart').getContext('2d');
+            
+            const labels = allData.equityCurve.map(point => point.date);
+            const data = allData.equityCurve.map(point => point.equity);
+            
+            if (equityChart) {
+                equityChart.destroy();
+            }
+            
+            equityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Equity',
+                        data: data,
+                        borderColor: '#06b6d4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 8,
+                        pointHoverBackgroundColor: '#06b6d4',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleColor: '#06b6d4',
+                            bodyColor: '#e2e8f0',
+                            borderColor: '#06b6d4',
+                            borderWidth: 2,
+                            padding: 15,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Equity: $' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#94a3b8',
+                                maxRotation: 0,
+                                minRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 8
+                            },
+                            grid: {
+                                color: 'rgba(6, 182, 212, 0.1)'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function(value) {
+                                    return '$' + value.toFixed(0);
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(6, 182, 212, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateWeeklyBreakdown() {
+            const tbody = document.getElementById('weeklyBreakdown');
+            
+            if (allData.distributions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No weekly data yet</td></tr>';
+                return;
+            }
+            
+            const html = allData.distributions.reverse().map((dist, index) => {
+                const weekNum = allData.distributions.length - index;
+                const returnVal = parseFloat(dist.totalReturn);
+                const depositVal = parseFloat(dist.deposited);
+                
+                return `
+                    <tr>
+                        <td>${weekNum}</td>
+                        <td>${dist.weekEnding}</td>
+                        <td class="${returnVal >= 0 ? 'pnl-positive' : 'pnl-negative'}">
+                            ${returnVal >= 0 ? '+' : ''}$${dist.totalReturn}
+                        </td>
+                        <td>$${dist.profitShare}</td>
+                        <td class="pnl-positive">$${dist.compounded}</td>
+                        <td>$${dist.withdrawn}</td>
+                        <td class="${depositVal > 0 ? 'pnl-positive' : ''}">$${dist.deposited}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = html;
+        }
+
+        function updateTradeHistory() {
+            const tbody = document.getElementById('tradeHistory');
+            
+            if (allData.trades.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No trades yet</td></tr>';
+                return;
+            }
+            
+            const reversedTrades = [...allData.trades].reverse();
+            
+            const html = reversedTrades.map(trade => {
+                const pnl = parseFloat(trade.closedPnl);
+                const isLong = trade.direction.toLowerCase().includes('long');
+                
+                return `
+                    <tr>
+                        <td>${trade.time}</td>
+                        <td>${trade.coin}</td>
+                        <td class="direction-${isLong ? 'long' : 'short'}">${trade.direction}</td>
+                        <td>$${trade.price}</td>
+                        <td>${trade.shares}</td>
+                        <td>$${trade.netValue}</td>
+                        <td>$${trade.fee}</td>
+                        <td class="${pnl >= 0 ? 'pnl-positive' : 'pnl-negative'}">
+                            ${pnl >= 0 ? '+' : ''}$${trade.closedPnl}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tbody.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
